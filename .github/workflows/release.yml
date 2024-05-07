@@ -1,0 +1,111 @@
+---
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: Build binaries
+    runs-on: ubuntu-latest
+    environment:
+      name: "release"
+    permissions:
+      contents: write
+    strategy:
+      matrix:
+        directory:
+          - aardvark-dns
+          - netavark
+        target:
+          - x86_64-unknown-linux-gnu
+          - aarch64-unknown-linux-gnu
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+          fetch-depth: 0
+
+      - name: Install rust toolchain
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          rustflags: ""
+          target: "${{ matrix.target }}"
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install protobuf-compiler
+
+      - name: Configure linker
+        if: ${{ matrix.target == 'aarch64-unknown-linux-gnu' }}
+        run: |
+          sudo apt-get install gcc-aarch64-linux-gnu
+
+          echo "CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc" \
+            >> "${GITHUB_ENV}"
+
+      - name: Build binary
+        run: |
+          cd "${{ matrix.directory }}"
+          cargo build --release --target "${{ matrix.target }}"
+
+      - name: Create tarball
+        run: |
+          cd "${{ matrix.directory }}/target/${{ matrix.target }}/release/"
+          rm .cargo-lock
+          rm -r .fingerprint
+          rm -r build
+          rm -r deps
+          rm -r incremental
+          tar -czvf "${{ github.workspace }}/${{ matrix.directory }}-${{ matrix.target }}.tar.gz" .
+
+      - name: Upload binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: "${{ matrix.directory }}-${{ matrix.target }}"
+          path: "${{ github.workspace }}/${{ matrix.directory }}-${{ matrix.target }}.tar.gz"
+
+  release:
+    name: Create release
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: "release"
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+          fetch-depth: 0
+
+      - name: Download binaries
+        uses: actions/download-artifact@v4
+        with:
+          path: "dist"
+
+      - name: Get version
+        id: get-version
+        run: |
+          cd netavark
+          tag=$(git describe --tags)
+          echo "tag=${tag}" >> "${GITHUB_OUTPUT}"
+
+      - name: Create tag
+        id: create-tag
+        uses: mathieudutour/github-tag-action@v6.2
+        with:
+          tag_prefix: ""
+          custom_tag: "${{ steps.get-version.outputs.tag }}"
+          github_token: "${{ secrets.GITHUB_TOKEN }}"
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: "${{ steps.create-tag.outputs.new_tag }}"
+          files: "dist/*/*"

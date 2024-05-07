@@ -1,0 +1,9 @@
+[submodule "chezmoi"]
+	path = chezmoi
+	url = https://github.com/twpayne/chezmoi
+[submodule "aardvark-dns"]
+	path = aardvark-dns
+	url = https://github.com/containers/aardvark-dns
+[submodule "netavark"]
+	path = netavark
+	url = https://github.com/containers/netavark
