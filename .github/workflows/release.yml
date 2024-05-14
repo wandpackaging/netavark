@@ -91,6 +91,7 @@ jobs:
 
       - name: Stash tarballs
         run: |
+          mkdir dist
           mv artifacts/*/* dist/
 
       - name: Calculate checksums
