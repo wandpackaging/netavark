@@ -87,7 +87,11 @@ jobs:
       - name: Download binaries
         uses: actions/download-artifact@v4
         with:
-          path: "dist"
+          path: "artifacts"
+
+      - name: Stash tarballs
+        run: |
+          mv artifacts/*/* dist/
 
       - name: Calculate checksums
         run: |
@@ -114,5 +118,5 @@ jobs:
         with:
           tag_name: "${{ steps.create-tag.outputs.new_tag }}"
           files: |
-            dist/*/*
+            dist/*
             dist/sha256sums.txt
