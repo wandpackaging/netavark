@@ -115,9 +115,9 @@ jobs:
           github_token: "${{ secrets.GITHUB_TOKEN }}"
 
       - name: Create release
-        uses: softprops/action-gh-release@v2
+        uses: svenstaro/upload-release-action@v2
         with:
-          tag_name: "${{ steps.create-tag.outputs.new_tag }}"
-          files: |
-            dist/*
-            dist/sha256sums.txt
+          tag: "${{ steps.create-tag.outputs.new_tag }}"
+          file: dist/*
+          file_glob: true
+          overwrite: true
