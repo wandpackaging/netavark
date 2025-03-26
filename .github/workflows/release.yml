@@ -117,6 +117,7 @@ jobs:
       - name: Create release
         uses: svenstaro/upload-release-action@v2
         with:
+          release_name: "${{ steps.create-tag.outputs.new_tag }}"
           tag: "${{ steps.create-tag.outputs.new_tag }}"
           file: dist/*
           file_glob: true
