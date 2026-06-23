@@ -109,19 +109,12 @@ jobs:
           tag=$(git describe --tags)
           echo "tag=${tag}" >> "${GITHUB_OUTPUT}"
 
-      - name: Create tag
-        id: create-tag
-        uses: mathieudutour/github-tag-action@v6.2
-        with:
-          tag_prefix: ""
-          custom_tag: "${{ steps.get-version.outputs.tag }}"
-          github_token: "${{ secrets.GITHUB_TOKEN }}"
-
       - name: Create release
         uses: svenstaro/upload-release-action@v2
         with:
-          release_name: "${{ steps.create-tag.outputs.new_tag }}"
-          tag: "${{ steps.create-tag.outputs.new_tag }}"
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          release_name: "${{ steps.get-version.outputs.tag }}"
+          tag: "${{ steps.get-version.outputs.tag }}"
           file: dist/*
           file_glob: true
           overwrite: true
